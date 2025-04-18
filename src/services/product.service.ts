@@ -50,22 +50,28 @@ export const searchProducts = async (keyword: string) => {
 };
 
 export const createProduct = async (productData: FormData | any) => {
-  // Check if productData is FormData (contains files) or regular JSON data
-  const headers = productData instanceof FormData 
-    ? { 'Content-Type': 'multipart/form-data' }
-    : { 'Content-Type': 'application/json' };
+  // For FormData, we shouldn't set the Content-Type header as the browser will set it correctly with the boundary
+  const config = productData instanceof FormData 
+    ? { headers: {} } 
+    : { headers: { 'Content-Type': 'application/json' } };
   
-  const response = await api.post<ProductResponse>('/products', productData, { headers });
+  console.log('Creating product with data:', 
+    productData instanceof FormData 
+      ? 'FormData (contents not printable)' 
+      : productData
+  );
+  
+  const response = await api.post<ProductResponse>('/products', productData, config);
   return response.data;
 };
 
 export const updateProduct = async (id: string, productData: FormData | any) => {
-  // Check if productData is FormData (contains files) or regular JSON data
-  const headers = productData instanceof FormData 
-    ? { 'Content-Type': 'multipart/form-data' }
-    : { 'Content-Type': 'application/json' };
+  // For FormData, we shouldn't set the Content-Type header as the browser will set it correctly with the boundary
+  const config = productData instanceof FormData 
+    ? { headers: {} } 
+    : { headers: { 'Content-Type': 'application/json' } };
   
-  const response = await api.patch<ProductResponse>(`/products/${id}`, productData, { headers });
+  const response = await api.patch<ProductResponse>(`/products/${id}`, productData, config);
   return response.data;
 };
 

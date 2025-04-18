@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -62,7 +61,7 @@ const ProductsPage = () => {
       console.error("Error creating product:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to create product",
+        description: error.response?.data?.message || error.message || "Failed to create product",
         variant: "destructive"
       });
     }
@@ -85,7 +84,7 @@ const ProductsPage = () => {
       console.error("Error updating product:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update product",
+        description: error.response?.data?.message || error.message || "Failed to update product",
         variant: "destructive"
       });
     }
@@ -155,46 +154,62 @@ const ProductsPage = () => {
       return;
     }
 
-    // Create a FormData object to handle file uploads
-    const formData = new FormData();
-    formData.append("name", productData.name);
-    formData.append("description", productData.description);
-    formData.append("price", productData.price);
-    formData.append("category", productData.category);
-    formData.append("stock", productData.stock);
+    try {
+      // Create a FormData object to handle file uploads
+      const formData = new FormData();
+      formData.append("name", productData.name);
+      formData.append("description", productData.description || "");
+      formData.append("price", productData.price);
+      formData.append("category", productData.category || "");
+      formData.append("stock", productData.stock);
+      
+      console.log("Form data being prepared:", {
+        name: productData.name,
+        description: productData.description || "",
+        price: productData.price,
+        category: productData.category || "",
+        stock: productData.stock,
+        filesSelected: selectedFiles ? selectedFiles.length : 0
+      });
 
-    // Add files to FormData if selected
-    if (selectedFiles && selectedFiles.length > 0) {
-      for (let i = 0; i < selectedFiles.length; i++) {
-        formData.append("images", selectedFiles[i]);
+      // Add files to FormData if selected
+      if (selectedFiles && selectedFiles.length > 0) {
+        for (let i = 0; i < selectedFiles.length; i++) {
+          formData.append("images", selectedFiles[i]);
+        }
       }
-    }
 
-    console.log("Submitting product data:", isCreateMode ? "create" : "update");
-
-    if (isCreateMode) {
-      createMutation.mutate(formData);
-    } else if (selectedProduct) {
-      // If no new files are selected in edit mode, use regular JSON
-      if (!selectedFiles || selectedFiles.length === 0) {
-        const jsonData = {
-          name: productData.name,
-          description: productData.description,
-          price: parseFloat(productData.price),
-          category: productData.category,
-          stock: parseInt(productData.stock)
-        };
-        
-        updateMutation.mutate({
-          id: selectedProduct._id,
-          productData: jsonData
-        });
-      } else {
-        updateMutation.mutate({
-          id: selectedProduct._id,
-          productData: formData
-        });
+      if (isCreateMode) {
+        createMutation.mutate(formData);
+      } else if (selectedProduct) {
+        // If no new files are selected in edit mode, use regular JSON
+        if (!selectedFiles || selectedFiles.length === 0) {
+          const jsonData = {
+            name: productData.name,
+            description: productData.description || "",
+            price: parseFloat(productData.price),
+            category: productData.category || "",
+            stock: parseInt(productData.stock)
+          };
+          
+          updateMutation.mutate({
+            id: selectedProduct._id,
+            productData: jsonData
+          });
+        } else {
+          updateMutation.mutate({
+            id: selectedProduct._id,
+            productData: formData
+          });
+        }
       }
+    } catch (error) {
+      console.error("Error in form submission:", error);
+      toast({
+        title: "Error",
+        description: "There was an error submitting the form",
+        variant: "destructive"
+      });
     }
   };
 
