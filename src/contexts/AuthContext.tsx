@@ -18,6 +18,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string, passwordConfirm: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (userData: Partial<{ name: string; email: string; phone: string; avatar: string }>) => Promise<void>;
+  updatePassword: (currentPassword: string, newPassword: string, newPasswordConfirm: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -96,6 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
+      setLoading(true);
       await authService.logout();
       localStorage.removeItem('token');
       localStorage.removeItem('user');
@@ -104,11 +106,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.success('Logged out successfully');
     } catch (error) {
       console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const updateProfile = async (userData: Partial<{ name: string; email: string; phone: string; avatar: string }>) => {
     try {
+      setLoading(true);
       const response = await authService.updateProfile(userData);
       const updatedUser = response.data.user;
       
@@ -120,6 +125,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to update profile');
       throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updatePassword = async (currentPassword: string, newPassword: string, newPasswordConfirm: string) => {
+    try {
+      setLoading(true);
+      const passwordData = { currentPassword, newPassword, newPasswordConfirm };
+      const response = await authService.updatePassword(passwordData);
+      
+      // Update token in local storage if returned in response
+      if (response.token) {
+        localStorage.setItem('token', response.token);
+      }
+      
+      toast.success('Password updated successfully');
+      return response;
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update password');
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -132,7 +160,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         register,
         logout,
-        updateProfile
+        updateProfile,
+        updatePassword
       }}
     >
       {children}
