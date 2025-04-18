@@ -49,13 +49,23 @@ export const searchProducts = async (keyword: string) => {
   return response.data;
 };
 
-export const createProduct = async (productData: any) => {
-  const response = await api.post<ProductResponse>('/products', productData);
+export const createProduct = async (productData: FormData | any) => {
+  // Check if productData is FormData (contains files) or regular JSON data
+  const headers = productData instanceof FormData 
+    ? { 'Content-Type': 'multipart/form-data' }
+    : { 'Content-Type': 'application/json' };
+  
+  const response = await api.post<ProductResponse>('/products', productData, { headers });
   return response.data;
 };
 
-export const updateProduct = async (id: string, productData: any) => {
-  const response = await api.patch<ProductResponse>(`/products/${id}`, productData);
+export const updateProduct = async (id: string, productData: FormData | any) => {
+  // Check if productData is FormData (contains files) or regular JSON data
+  const headers = productData instanceof FormData 
+    ? { 'Content-Type': 'multipart/form-data' }
+    : { 'Content-Type': 'application/json' };
+  
+  const response = await api.patch<ProductResponse>(`/products/${id}`, productData, { headers });
   return response.data;
 };
 

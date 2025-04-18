@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Edit, Plus, Search, Trash, Package } from "lucide-react";
+import { Edit, Plus, Search, Trash, Package, Upload } from "lucide-react";
 import AdminLayout from "./components/AdminLayout";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import * as productService from "@/services/product.service";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 
 const ProductsPage = () => {
@@ -29,6 +29,8 @@ const ProductsPage = () => {
     category: "",
     stock: ""
   });
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["products", currentPage],
@@ -45,7 +47,7 @@ const ProductsPage = () => {
   }
 
   const createMutation = useMutation({
-    mutationFn: (productData: any) => productService.createProduct(productData),
+    mutationFn: (productData: FormData | any) => productService.createProduct(productData),
     onSuccess: () => {
       toast({
         title: "Success",
@@ -57,6 +59,7 @@ const ProductsPage = () => {
       resetForm();
     },
     onError: (error: any) => {
+      console.error("Error creating product:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to create product",
@@ -66,7 +69,7 @@ const ProductsPage = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: { id: string, productData: any }) => 
+    mutationFn: (data: { id: string, productData: FormData | any }) => 
       productService.updateProduct(data.id, data.productData),
     onSuccess: () => {
       toast({
@@ -79,6 +82,7 @@ const ProductsPage = () => {
       resetForm();
     },
     onError: (error: any) => {
+      console.error("Error updating product:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to update product",
@@ -115,6 +119,10 @@ const ProductsPage = () => {
       stock: ""
     });
     setSelectedProduct(null);
+    setSelectedFiles(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const openCreateDialog = () => {
@@ -147,19 +155,52 @@ const ProductsPage = () => {
       return;
     }
 
-    const formattedData = {
-      ...productData,
-      price: parseFloat(productData.price),
-      stock: parseInt(productData.stock)
-    };
+    // Create a FormData object to handle file uploads
+    const formData = new FormData();
+    formData.append("name", productData.name);
+    formData.append("description", productData.description);
+    formData.append("price", productData.price);
+    formData.append("category", productData.category);
+    formData.append("stock", productData.stock);
+
+    // Add files to FormData if selected
+    if (selectedFiles && selectedFiles.length > 0) {
+      for (let i = 0; i < selectedFiles.length; i++) {
+        formData.append("images", selectedFiles[i]);
+      }
+    }
+
+    console.log("Submitting product data:", isCreateMode ? "create" : "update");
 
     if (isCreateMode) {
-      createMutation.mutate(formattedData);
+      createMutation.mutate(formData);
     } else if (selectedProduct) {
-      updateMutation.mutate({
-        id: selectedProduct._id,
-        productData: formattedData
-      });
+      // If no new files are selected in edit mode, use regular JSON
+      if (!selectedFiles || selectedFiles.length === 0) {
+        const jsonData = {
+          name: productData.name,
+          description: productData.description,
+          price: parseFloat(productData.price),
+          category: productData.category,
+          stock: parseInt(productData.stock)
+        };
+        
+        updateMutation.mutate({
+          id: selectedProduct._id,
+          productData: jsonData
+        });
+      } else {
+        updateMutation.mutate({
+          id: selectedProduct._id,
+          productData: formData
+        });
+      }
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setSelectedFiles(e.target.files);
     }
   };
 
@@ -359,6 +400,35 @@ const ProductsPage = () => {
                   onChange={(e) => setProductData({ ...productData, category: e.target.value })}
                   placeholder="Enter product category"
                 />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="images">Product Images</Label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                  <Input
+                    id="images"
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full h-24 flex flex-col items-center justify-center"
+                  >
+                    <Upload className="h-6 w-6 mb-2" />
+                    <span>Click to upload images</span>
+                    <span className="text-xs text-gray-500 mt-1">
+                      {selectedFiles?.length 
+                        ? `${selectedFiles.length} file(s) selected` 
+                        : "JPG, PNG or WebP (max 5MB each)"}
+                    </span>
+                  </Button>
+                </div>
               </div>
             </div>
             
