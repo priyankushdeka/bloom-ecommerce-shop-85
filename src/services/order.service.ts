@@ -23,7 +23,7 @@ export interface Order {
   orderItems: OrderItem[];
   shippingAddress: ShippingAddress;
   paymentMethod: string;
-  paymentResult: {
+  paymentResult?: {
     id: string;
     status: string;
     update_time: string;
@@ -34,9 +34,9 @@ export interface Order {
   shippingPrice: number;
   totalPrice: number;
   isPaid: boolean;
-  paidAt: string;
+  paidAt?: string;
   isDelivered: boolean;
-  deliveredAt: string;
+  deliveredAt?: string;
   status: string;
   cancellationReason?: string;
   createdAt: string;
@@ -58,7 +58,7 @@ export interface OrdersResponse {
 }
 
 export const createOrder = async (orderData: {
-  orderItems: OrderItem[];
+  orderItems: Partial<OrderItem>[];
   shippingAddress: ShippingAddress;
   paymentMethod: string;
   itemsPrice: number;

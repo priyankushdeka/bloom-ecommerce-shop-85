@@ -30,6 +30,6 @@ export const removeFromWishlist = async (productId: string) => {
 };
 
 export const clearWishlist = async () => {
-  const response = await api.delete('/wishlist');
+  const response = await api.delete<WishlistResponse>('/wishlist');
   return response.data;
 };

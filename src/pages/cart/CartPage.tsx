@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -72,7 +71,7 @@ const CartPage = () => {
     await clearCart();
   };
 
-  const subtotal = cart.totalPrice;
+  const subtotal = cart?.totalPrice || 0;
   const tax = subtotal * 0.1; // Assuming 10% tax
   const shipping = subtotal > 100 ? 0 : 10; // Free shipping over $100
   const total = subtotal + tax + shipping;
@@ -88,7 +87,7 @@ const CartPage = () => {
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold">Items ({cart.items.length})</h2>
+                  <h2 className="text-lg font-semibold">Items ({cart?.items.length || 0})</h2>
                   <Button variant="outline" size="sm" onClick={handleClearCart}>
                     <Trash2 className="h-4 w-4 mr-2" />
                     Clear Cart
@@ -96,14 +95,14 @@ const CartPage = () => {
                 </div>
                 
                 <div className="divide-y">
-                  {cart.items.map((item) => (
+                  {cart?.items.map((item) => (
                     <div key={item._id} className="py-4 flex flex-col sm:flex-row gap-4">
                       <div className="flex-shrink-0">
                         <Link to={`/products/${item.product}`}>
                           <div className="h-24 w-24 rounded overflow-hidden">
                             <img 
-                              src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80" 
-                              alt="Product" 
+                              src={item.image || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80"} 
+                              alt={item.name || "Product"} 
                               className="h-full w-full object-cover"
                             />
                           </div>
@@ -112,7 +111,7 @@ const CartPage = () => {
                       
                       <div className="flex-1">
                         <Link to={`/products/${item.product}`} className="font-semibold text-lg hover:text-blue-600">
-                          Product Name
+                          {item.name || "Product"}
                         </Link>
                         <div className="text-gray-600 mt-1">Price: ${item.price.toFixed(2)}</div>
                         

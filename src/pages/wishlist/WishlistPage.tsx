@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Heart, ShoppingCart, Trash } from "lucide-react";
@@ -19,7 +19,7 @@ const WishlistPage = () => {
   const { addToCart, loading: cartLoading } = useCart();
   const [movingToCart, setMovingToCart] = useState<Record<string, boolean>>({});
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["wishlistProducts", wishlist?.products],
     queryFn: async () => {
       if (!wishlist?.products || wishlist.products.length === 0) {
@@ -28,18 +28,23 @@ const WishlistPage = () => {
       
       // Get product details for each product in the wishlist
       const productsPromises = wishlist.products.map(id => 
-        productService.getProduct(id).catch(() => null)
+        productService.getProduct(id)
+          .then(result => result.data.product)
+          .catch(() => null)
       );
       
-      const productsResults = await Promise.all(productsPromises);
-      const products = productsResults
-        .filter(result => result !== null)
-        .map(result => result?.data.product);
-        
+      const products = (await Promise.all(productsPromises)).filter(product => product !== null);
       return { data: { products } };
     },
-    enabled: !!wishlist && wishlist.products.length > 0,
+    enabled: !!wishlist && wishlist.products && wishlist.products.length > 0,
   });
+
+  // Refetch when wishlist changes
+  useEffect(() => {
+    if (wishlist) {
+      refetch();
+    }
+  }, [wishlist, refetch]);
 
   if (!isAuthenticated) {
     return (

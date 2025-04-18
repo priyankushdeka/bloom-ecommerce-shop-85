@@ -50,13 +50,16 @@ export const searchProducts = async (keyword: string) => {
 };
 
 export const createProduct = async (productData: FormData | any) => {
-  // For FormData, we shouldn't set the Content-Type header as the browser will set it correctly with the boundary
-  const config = productData instanceof FormData 
-    ? { headers: { 'Content-Type': 'multipart/form-data' } } 
-    : { headers: { 'Content-Type': 'application/json' } };
+  let config = {};
   
-  // Ensure data format meets validation requirements
-  if (!(productData instanceof FormData)) {
+  if (productData instanceof FormData) {
+    // Don't set content type for FormData - browser will set it with proper boundary
+    config = {};
+  } else {
+    config = { 
+      headers: { 'Content-Type': 'application/json' } 
+    };
+    
     // Ensure numbers are actually numbers not strings
     if (typeof productData.price === 'string') {
       productData.price = parseFloat(productData.price);
@@ -88,13 +91,16 @@ export const createProduct = async (productData: FormData | any) => {
 };
 
 export const updateProduct = async (id: string, productData: FormData | any) => {
-  // For FormData, we shouldn't set the Content-Type header as the browser will set it correctly with the boundary
-  const config = productData instanceof FormData 
-    ? { headers: { 'Content-Type': 'multipart/form-data' } } 
-    : { headers: { 'Content-Type': 'application/json' } };
+  let config = {};
   
-  // Ensure data format meets validation requirements
-  if (!(productData instanceof FormData)) {
+  if (productData instanceof FormData) {
+    // Don't set content type for FormData - browser will set it with proper boundary
+    config = {};
+  } else {
+    config = { 
+      headers: { 'Content-Type': 'application/json' } 
+    };
+    
     // Ensure numbers are actually numbers not strings
     if (typeof productData.price === 'string') {
       productData.price = parseFloat(productData.price);

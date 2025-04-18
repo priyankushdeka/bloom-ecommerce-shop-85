@@ -1,6 +1,6 @@
 
-import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Heart, ChevronLeft, Minus, Plus, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { toast } from "sonner";
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   
@@ -56,7 +57,12 @@ const ProductDetail = () => {
     }
     
     if (id) {
-      await addToCart(id, quantity);
+      try {
+        await addToCart(id, quantity);
+        toast.success("Product added to cart");
+      } catch (error) {
+        toast.error("Failed to add product to cart");
+      }
     }
   };
 
@@ -68,10 +74,16 @@ const ProductDetail = () => {
     
     if (!id) return;
     
-    if (inWishlist) {
-      await removeFromWishlist(id);
-    } else {
-      await addToWishlist(id);
+    try {
+      if (inWishlist) {
+        await removeFromWishlist(id);
+        toast.success("Removed from wishlist");
+      } else {
+        await addToWishlist(id);
+        toast.success("Added to wishlist");
+      }
+    } catch (error) {
+      toast.error("Failed to update wishlist");
     }
   };
 
@@ -120,13 +132,13 @@ const ProductDetail = () => {
             <div>
               <div className="aspect-square rounded-lg overflow-hidden mb-4">
                 <img
-                  src={product.images[selectedImage] || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80"}
+                  src={product.images && product.images.length > 0 ? product.images[selectedImage] : "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80"}
                   alt={product.name}
                   className="w-full h-full object-cover"
                 />
               </div>
               
-              {product.images.length > 1 && (
+              {product.images && product.images.length > 1 && (
                 <div className="grid grid-cols-4 gap-2">
                   {product.images.map((image, index) => (
                     <div
@@ -156,7 +168,7 @@ const ProductDetail = () => {
                   <span>★</span>
                   <span className="ml-1 text-gray-600">{product.ratings.toFixed(1)}</span>
                 </div>
-                <span className="text-gray-500">({product.reviews.length} reviews)</span>
+                <span className="text-gray-500">({product.reviews?.length || 0} reviews)</span>
               </div>
               
               <div className="text-2xl font-bold text-blue-600 mb-4">${product.price.toFixed(2)}</div>
