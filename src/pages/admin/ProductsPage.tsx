@@ -12,6 +12,15 @@ import LoadingSpinner from "@/components/ui/loading-spinner";
 import * as productService from "@/services/product.service";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { useForm } from "react-hook-form";
+
+interface ProductFormData {
+  name: string;
+  description: string;
+  price: string;
+  category: string;
+  stock: string;
+}
 
 const ProductsPage = () => {
   const { toast } = useToast();
@@ -21,7 +30,7 @@ const ProductsPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateMode, setIsCreateMode] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [productData, setProductData] = useState({
+  const [productData, setProductData] = useState<ProductFormData>({
     name: "",
     description: "",
     price: "",
@@ -36,7 +45,6 @@ const ProductsPage = () => {
     queryFn: () => productService.getAllProducts({ page: currentPage, limit: 10 })
   });
   
-  // Handle error
   if (error) {
     toast({
       title: "Error",
@@ -143,63 +151,108 @@ const ProductsPage = () => {
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = () => {
-    // Validate form
-    if (!productData.name || !productData.price || !productData.stock) {
+  const validateForm = () => {
+    if (!productData.name?.trim()) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields",
+        description: "Product name is required",
         variant: "destructive"
       });
+      return false;
+    }
+    
+    if (!productData.description?.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Product description is required (min 10 characters)",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    if (!productData.description || productData.description.length < 10) {
+      toast({
+        title: "Validation Error",
+        description: "Description must be at least 10 characters",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (!productData.price || isNaN(Number(productData.price)) || Number(productData.price) <= 0) {
+      toast({
+        title: "Validation Error",
+        description: "Price must be a positive number",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (!productData.category?.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Category is required",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (!productData.stock || isNaN(Number(productData.stock)) || Number(productData.stock) < 0) {
+      toast({
+        title: "Validation Error",
+        description: "Stock must be a positive number or zero",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    return true;
+  };
+
+  const handleSubmit = () => {
+    if (!validateForm()) {
       return;
     }
 
     try {
-      // Create a FormData object to handle file uploads
-      const formData = new FormData();
-      formData.append("name", productData.name);
-      formData.append("description", productData.description || "");
-      formData.append("price", productData.price);
-      formData.append("category", productData.category || "");
-      formData.append("stock", productData.stock);
-      
-      console.log("Form data being prepared:", {
-        name: productData.name,
-        description: productData.description || "",
-        price: productData.price,
-        category: productData.category || "",
-        stock: productData.stock,
-        filesSelected: selectedFiles ? selectedFiles.length : 0
-      });
-
-      // Add files to FormData if selected
       if (selectedFiles && selectedFiles.length > 0) {
+        const formData = new FormData();
+        formData.append("name", productData.name);
+        formData.append("description", productData.description);
+        formData.append("price", productData.price);
+        formData.append("category", productData.category);
+        formData.append("stock", productData.stock);
+        
         for (let i = 0; i < selectedFiles.length; i++) {
           formData.append("images", selectedFiles[i]);
         }
-      }
-
-      if (isCreateMode) {
-        createMutation.mutate(formData);
-      } else if (selectedProduct) {
-        // If no new files are selected in edit mode, use regular JSON
-        if (!selectedFiles || selectedFiles.length === 0) {
-          const jsonData = {
-            name: productData.name,
-            description: productData.description || "",
-            price: parseFloat(productData.price),
-            category: productData.category || "",
-            stock: parseInt(productData.stock)
-          };
-          
-          updateMutation.mutate({
-            id: selectedProduct._id,
-            productData: jsonData
-          });
-        } else {
+        
+        if (isCreateMode) {
+          console.log("Submitting form data:", Object.fromEntries(formData));
+          createMutation.mutate(formData);
+        } else if (selectedProduct) {
           updateMutation.mutate({
             id: selectedProduct._id,
             productData: formData
+          });
+        }
+      } else {
+        const jsonData = {
+          name: productData.name,
+          description: productData.description,
+          price: Number(productData.price),
+          category: productData.category,
+          stock: Number(productData.stock)
+        };
+        
+        console.log("Submitting JSON data:", jsonData);
+        
+        if (isCreateMode) {
+          createMutation.mutate(jsonData);
+        } else if (selectedProduct) {
+          updateMutation.mutate({
+            id: selectedProduct._id,
+            productData: jsonData
           });
         }
       }
@@ -342,7 +395,6 @@ const ProductsPage = () => {
           </CardContent>
         </Card>
         
-        {/* Create/Edit Product Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
@@ -370,13 +422,14 @@ const ProductsPage = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">Description * (min 10 chars)</Label>
                 <Textarea
                   id="description"
                   value={productData.description}
                   onChange={(e) => setProductData({ ...productData, description: e.target.value })}
-                  placeholder="Enter product description"
+                  placeholder="Enter product description (min 10 characters)"
                   rows={4}
+                  required
                 />
               </div>
               
@@ -408,12 +461,13 @@ const ProductsPage = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
+                <Label htmlFor="category">Category *</Label>
                 <Input
                   id="category"
                   value={productData.category}
                   onChange={(e) => setProductData({ ...productData, category: e.target.value })}
                   placeholder="Enter product category"
+                  required
                 />
               </div>
               

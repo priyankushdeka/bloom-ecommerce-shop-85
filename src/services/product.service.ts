@@ -52,8 +52,25 @@ export const searchProducts = async (keyword: string) => {
 export const createProduct = async (productData: FormData | any) => {
   // For FormData, we shouldn't set the Content-Type header as the browser will set it correctly with the boundary
   const config = productData instanceof FormData 
-    ? { headers: {} } 
+    ? { headers: { 'Content-Type': 'multipart/form-data' } } 
     : { headers: { 'Content-Type': 'application/json' } };
+  
+  // Ensure data format meets validation requirements
+  if (!(productData instanceof FormData)) {
+    // Ensure numbers are actually numbers not strings
+    if (typeof productData.price === 'string') {
+      productData.price = parseFloat(productData.price);
+    }
+    if (typeof productData.stock === 'string') {
+      productData.stock = parseInt(productData.stock, 10);
+    }
+    
+    // Make sure we have required fields
+    if (!productData.name || !productData.description || !productData.price || 
+        !productData.category || productData.stock === undefined) {
+      throw new Error('Missing required product fields');
+    }
+  }
   
   console.log('Creating product with data:', 
     productData instanceof FormData 
@@ -61,18 +78,39 @@ export const createProduct = async (productData: FormData | any) => {
       : productData
   );
   
-  const response = await api.post<ProductResponse>('/products', productData, config);
-  return response.data;
+  try {
+    const response = await api.post<ProductResponse>('/products', productData, config);
+    return response.data;
+  } catch (error: any) {
+    console.error('Error response from server:', error.response?.data);
+    throw error;
+  }
 };
 
 export const updateProduct = async (id: string, productData: FormData | any) => {
   // For FormData, we shouldn't set the Content-Type header as the browser will set it correctly with the boundary
   const config = productData instanceof FormData 
-    ? { headers: {} } 
+    ? { headers: { 'Content-Type': 'multipart/form-data' } } 
     : { headers: { 'Content-Type': 'application/json' } };
   
-  const response = await api.patch<ProductResponse>(`/products/${id}`, productData, config);
-  return response.data;
+  // Ensure data format meets validation requirements
+  if (!(productData instanceof FormData)) {
+    // Ensure numbers are actually numbers not strings
+    if (typeof productData.price === 'string') {
+      productData.price = parseFloat(productData.price);
+    }
+    if (typeof productData.stock === 'string') {
+      productData.stock = parseInt(productData.stock, 10);
+    }
+  }
+  
+  try {
+    const response = await api.patch<ProductResponse>(`/products/${id}`, productData, config);
+    return response.data;
+  } catch (error: any) {
+    console.error('Error response from server:', error.response?.data);
+    throw error;
+  }
 };
 
 export const deleteProduct = async (id: string) => {
