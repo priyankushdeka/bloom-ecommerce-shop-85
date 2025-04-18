@@ -38,6 +38,7 @@ export interface Order {
   isDelivered: boolean;
   deliveredAt: string;
   status: string;
+  cancellationReason?: string;
   createdAt: string;
 }
 

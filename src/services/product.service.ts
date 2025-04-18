@@ -48,3 +48,18 @@ export const searchProducts = async (keyword: string) => {
   const response = await api.get<ProductsResponse>('/products/search', { params: { keyword } });
   return response.data;
 };
+
+export const createProduct = async (productData: any) => {
+  const response = await api.post<ProductResponse>('/products', productData);
+  return response.data;
+};
+
+export const updateProduct = async (id: string, productData: any) => {
+  const response = await api.patch<ProductResponse>(`/products/${id}`, productData);
+  return response.data;
+};
+
+export const deleteProduct = async (id: string) => {
+  const response = await api.delete<{success: boolean}>(`/products/${id}`);
+  return response.data;
+};

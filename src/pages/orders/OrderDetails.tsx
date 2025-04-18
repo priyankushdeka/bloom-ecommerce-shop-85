@@ -48,17 +48,17 @@ const OrderDetails = () => {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["order", id],
     queryFn: () => orderService.getOrderById(id as string),
-    enabled: !!id,
-    onSettled: (data, error: any) => {
-      if (error) {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to fetch order details",
-          variant: "destructive"
-        });
-      }
-    }
+    enabled: !!id
   });
+  
+  // Handle error
+  if (error) {
+    toast({
+      title: "Error",
+      description: (error as Error).message || "Failed to fetch order details",
+      variant: "destructive"
+    });
+  }
 
   const handleCancelOrder = async () => {
     if (!id) return;

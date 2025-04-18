@@ -38,17 +38,17 @@ const OrdersPage = () => {
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["orders"],
-    queryFn: orderService.getMyOrders,
-    onSettled: (data, error: any) => {
-      if (error) {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to fetch orders",
-          variant: "destructive"
-        });
-      }
-    }
+    queryFn: orderService.getMyOrders
   });
+  
+  // Handle error
+  if (error) {
+    toast({
+      title: "Error",
+      description: (error as Error).message || "Failed to fetch orders",
+      variant: "destructive"
+    });
+  }
 
   if (isLoading) {
     return (

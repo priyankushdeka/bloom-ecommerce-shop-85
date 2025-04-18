@@ -30,19 +30,19 @@ const ProductsPage = () => {
     stock: ""
   });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["products", currentPage],
-    queryFn: () => productService.getAllProducts({ page: currentPage, limit: 10 }),
-    onSettled: (data, error: any) => {
-      if (error) {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to fetch products",
-          variant: "destructive"
-        });
-      }
-    }
+    queryFn: () => productService.getAllProducts({ page: currentPage, limit: 10 })
   });
+  
+  // Handle error
+  if (error) {
+    toast({
+      title: "Error",
+      description: (error as Error).message || "Failed to fetch products",
+      variant: "destructive"
+    });
+  }
 
   const createMutation = useMutation({
     mutationFn: (productData: any) => productService.createProduct(productData),

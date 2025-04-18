@@ -27,19 +27,19 @@ const UsersPage = () => {
     role: "user"
   });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["adminUsers", currentPage],
-    queryFn: () => adminService.getUsers(currentPage, 10),
-    onSettled: (data, error: any) => {
-      if (error) {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to fetch users",
-          variant: "destructive"
-        });
-      }
-    }
+    queryFn: () => adminService.getUsers(currentPage, 10)
   });
+  
+  // Handle error
+  if (error) {
+    toast({
+      title: "Error",
+      description: (error as Error).message || "Failed to fetch users",
+      variant: "destructive"
+    });
+  }
 
   const updateMutation = useMutation({
     mutationFn: (data: { id: string, userData: any }) => 

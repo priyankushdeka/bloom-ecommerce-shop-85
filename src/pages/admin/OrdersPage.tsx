@@ -46,19 +46,19 @@ const OrdersPage = () => {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [newStatus, setNewStatus] = useState("");
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["adminOrders", currentPage],
-    queryFn: () => adminService.getOrders(currentPage, 10),
-    onSettled: (data, error: any) => {
-      if (error) {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to fetch orders",
-          variant: "destructive"
-        });
-      }
-    }
+    queryFn: () => adminService.getOrders(currentPage, 10)
   });
+  
+  // Handle error
+  if (error) {
+    toast({
+      title: "Error",
+      description: (error as Error).message || "Failed to fetch orders",
+      variant: "destructive"
+    });
+  }
 
   const updateStatusMutation = useMutation({
     mutationFn: (data: { id: string, status: string }) => 

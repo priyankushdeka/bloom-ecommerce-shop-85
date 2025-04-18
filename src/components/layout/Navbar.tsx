@@ -71,18 +71,16 @@ const Navbar = () => {
               </div>
             </Link>
             
-            {isAuthenticated && (
-              <Link to="/wishlist" className="text-gray-700 hover:text-blue-600">
-                <div className="relative">
-                  <Heart className="h-6 w-6" />
-                  {wishlistItemsCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-blue-600 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs">
-                      {wishlistItemsCount}
-                    </span>
-                  )}
-                </div>
-              </Link>
-            )}
+            <Link to="/wishlist" className="text-gray-700 hover:text-blue-600">
+              <div className="relative">
+                <Heart className="h-6 w-6" />
+                {isAuthenticated && wishlistItemsCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-blue-600 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs">
+                    {wishlistItemsCount}
+                  </span>
+                )}
+              </div>
+            </Link>
             
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
@@ -107,7 +105,10 @@ const Navbar = () => {
                         </Link>
                       )}
                       <button
-                        onClick={() => logout()}
+                        onClick={async () => {
+                          await logout();
+                          navigate("/login");
+                        }}
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                       >
                         <LogOut className="h-4 w-4 mr-2" />
@@ -243,9 +244,10 @@ const Navbar = () => {
                   </Link>
                 )}
                 <button
-                  onClick={() => {
-                    logout();
+                  onClick={async () => {
+                    await logout();
                     setIsMenuOpen(false);
+                    navigate("/login");
                   }}
                   className="w-full text-left flex items-center px-3 py-2 text-gray-700 hover:text-blue-600"
                 >

@@ -15,17 +15,17 @@ const Dashboard = () => {
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["adminDashboard"],
-    queryFn: adminService.getDashboardStats,
-    onSettled: (data, error: any) => {
-      if (error) {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to fetch dashboard data",
-          variant: "destructive"
-        });
-      }
-    }
+    queryFn: adminService.getDashboardStats
   });
+
+  // Handle error
+  if (error) {
+    toast({
+      title: "Error",
+      description: (error as Error).message || "Failed to fetch dashboard data",
+      variant: "destructive"
+    });
+  }
 
   if (isLoading) {
     return (
