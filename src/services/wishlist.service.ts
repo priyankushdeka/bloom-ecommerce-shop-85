@@ -1,10 +1,20 @@
 
 import api from './api';
 
+export interface WishlistProduct {
+  _id: string;
+  name: string;
+  price: number;
+  images: string[];
+  ratings: number;
+  stock: number;
+  isAvailable?: boolean;
+}
+
 export interface Wishlist {
   _id: string;
   user: string;
-  products: string[];
+  products: WishlistProduct[];
 }
 
 export interface WishlistResponse {

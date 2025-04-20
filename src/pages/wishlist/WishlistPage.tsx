@@ -10,7 +10,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import Navbar from "@/components/layout/Navbar";
 import LoadingSpinner from "@/components/ui/loading-spinner";
-import * as productService from "@/services/product.service";
 
 const WishlistPage = () => {
   const { toast } = useToast();
@@ -18,33 +17,6 @@ const WishlistPage = () => {
   const { wishlist, removeFromWishlist, clearWishlist, loading: wishlistLoading } = useWishlist();
   const { addToCart, loading: cartLoading } = useCart();
   const [movingToCart, setMovingToCart] = useState<Record<string, boolean>>({});
-
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ["wishlistProducts", wishlist?.products],
-    queryFn: async () => {
-      if (!wishlist?.products || wishlist.products.length === 0) {
-        return { data: { products: [] } };
-      }
-      
-      // Get product details for each product in the wishlist
-      const productsPromises = wishlist.products.map(id => 
-        productService.getProduct(id)
-          .then(result => result.data.product)
-          .catch(() => null)
-      );
-      
-      const products = (await Promise.all(productsPromises)).filter(product => product !== null);
-      return { data: { products } };
-    },
-    enabled: !!wishlist && wishlist.products && wishlist.products.length > 0,
-  });
-
-  // Refetch when wishlist changes
-  useEffect(() => {
-    if (wishlist) {
-      refetch();
-    }
-  }, [wishlist, refetch]);
 
   if (!isAuthenticated) {
     return (
@@ -64,7 +36,7 @@ const WishlistPage = () => {
     );
   }
 
-  if (isLoading || wishlistLoading) {
+  if (wishlistLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
@@ -75,7 +47,7 @@ const WishlistPage = () => {
     );
   }
 
-  const products = data?.data?.products || [];
+  const products = wishlist?.products || [];
 
   const handleMoveToCart = async (productId: string) => {
     try {
@@ -178,9 +150,10 @@ const WishlistPage = () => {
                       {product.name}
                     </h3>
                   </Link>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                    {product.description}
-                  </p>
+                  <div className="flex items-center mb-2">
+                    <span className="text-yellow-400 mr-1">★</span>
+                    <span className="text-sm text-gray-600">{product.ratings.toFixed(1)}</span>
+                  </div>
                   <div className="flex items-center justify-between">
                     <span className="text-xl font-bold text-blue-600">${product.price.toFixed(2)}</span>
                     <div className="flex gap-2">
@@ -194,9 +167,11 @@ const WishlistPage = () => {
                       <Button
                         onClick={() => handleMoveToCart(product._id)}
                         disabled={movingToCart[product._id] || cartLoading || product.stock < 1}
+                        className="whitespace-nowrap"
+                        size="sm"
                       >
                         <ShoppingCart className="h-4 w-4 mr-1" />
-                        <span className="hidden sm:inline">Add to Cart</span>
+                        Add to Cart
                       </Button>
                     </div>
                   </div>

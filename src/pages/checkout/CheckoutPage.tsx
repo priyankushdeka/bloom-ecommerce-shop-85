@@ -15,9 +15,10 @@ import Navbar from "@/components/layout/Navbar";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import * as orderService from "@/services/order.service";
 import { CreditCard, Truck, MapPin } from "lucide-react";
+import { toast } from "sonner";
 
 const CheckoutPage = () => {
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
   const navigate = useNavigate();
   const { cart, loading: cartLoading, clearCart } = useCart();
   const { user, loading: authLoading } = useAuth();
@@ -42,11 +43,7 @@ const CheckoutPage = () => {
   const createOrderMutation = useMutation({
     mutationFn: (orderData: any) => orderService.createOrder(orderData),
     onSuccess: (data) => {
-      toast({
-        title: "Order Created",
-        description: "Your order has been placed successfully",
-        variant: "default"
-      });
+      toast.success("Your order has been placed successfully");
       
       // Clear cart after successful order
       clearCart();
@@ -55,11 +52,7 @@ const CheckoutPage = () => {
       navigate(`/orders/${data.data.order._id}`);
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to place order",
-        variant: "destructive"
-      });
+      toast.error(error.message || "Failed to place order");
     }
   });
   
@@ -76,29 +69,21 @@ const CheckoutPage = () => {
     // Validate form
     if (!shippingAddress.address || !shippingAddress.city || !shippingAddress.postalCode || 
         !shippingAddress.country || !shippingAddress.phone) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all shipping details",
-        variant: "destructive"
-      });
+      toast.error("Please fill in all shipping details");
       return;
     }
     
     if (!cart || !cart.items || cart.items.length === 0) {
-      toast({
-        title: "Empty Cart",
-        description: "Your cart is empty",
-        variant: "destructive"
-      });
+      toast.error("Your cart is empty");
       return;
     }
     
     // Prepare order items
     const orderItems = cart.items.map(item => ({
-      product: item.product,
-      name: "Product", // This would ideally come from the product details
+      product: item.product._id,
+      name: item.product.name,
       quantity: item.quantity,
-      image: "/placeholder.svg", // This would ideally come from the product details
+      image: item.product.images && item.product.images.length ? item.product.images[0] : "/placeholder.svg",
       price: item.price
     }));
     
@@ -264,7 +249,7 @@ const CheckoutPage = () => {
                     {cart?.items.map((item) => (
                       <div key={item._id} className="flex justify-between">
                         <span className="text-gray-600">
-                          {item.quantity} x Product
+                          {item.quantity} x {item.product.name}
                         </span>
                         <span>${(item.price * item.quantity).toFixed(2)}</span>
                       </div>

@@ -58,7 +58,7 @@ export interface OrdersResponse {
 }
 
 export const createOrder = async (orderData: {
-  orderItems: Partial<OrderItem>[];
+  orderItems: OrderItem[];
   shippingAddress: ShippingAddress;
   paymentMethod: string;
   itemsPrice: number;

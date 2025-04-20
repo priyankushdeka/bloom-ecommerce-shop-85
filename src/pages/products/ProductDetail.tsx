@@ -48,6 +48,7 @@ const ProductDetail = () => {
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
       toast.error("Please login to add items to cart");
+      navigate("/login");
       return;
     }
     
@@ -60,8 +61,8 @@ const ProductDetail = () => {
       try {
         await addToCart(id, quantity);
         toast.success("Product added to cart");
-      } catch (error) {
-        toast.error("Failed to add product to cart");
+      } catch (error: any) {
+        toast.error(error.message || "Failed to add product to cart");
       }
     }
   };
@@ -69,6 +70,7 @@ const ProductDetail = () => {
   const handleWishlistToggle = async () => {
     if (!isAuthenticated) {
       toast.error("Please login to add items to wishlist");
+      navigate("/login");
       return;
     }
     
@@ -82,8 +84,8 @@ const ProductDetail = () => {
         await addToWishlist(id);
         toast.success("Added to wishlist");
       }
-    } catch (error) {
-      toast.error("Failed to update wishlist");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update wishlist");
     }
   };
 
@@ -140,7 +142,7 @@ const ProductDetail = () => {
               
               {product.images && product.images.length > 1 && (
                 <div className="grid grid-cols-4 gap-2">
-                  {product.images.map((image, index) => (
+                  {product.images.map((image: string, index: number) => (
                     <div
                       key={index}
                       className={`aspect-square rounded-md overflow-hidden cursor-pointer ${
@@ -168,7 +170,7 @@ const ProductDetail = () => {
                   <span>★</span>
                   <span className="ml-1 text-gray-600">{product.ratings.toFixed(1)}</span>
                 </div>
-                <span className="text-gray-500">({product.reviews?.length || 0} reviews)</span>
+                <span className="text-gray-500">({product.numReviews || 0} reviews)</span>
               </div>
               
               <div className="text-2xl font-bold text-blue-600 mb-4">${product.price.toFixed(2)}</div>

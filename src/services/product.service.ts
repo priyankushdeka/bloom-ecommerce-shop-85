@@ -6,10 +6,15 @@ export interface Product {
   name: string;
   description: string;
   price: number;
+  discountPrice?: number;
   ratings: number;
+  numReviews: number;
   images: string[];
   category: string;
+  tags?: string[];
   stock: number;
+  isAvailable: boolean;
+  featured?: boolean;
   reviews: any[];
   createdAt: string;
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import LoadingSpinner from "@/components/ui/loading-spinner";
+import { toast } from "sonner";
 
 const CartPage = () => {
   const { cart, loading, removeCartItem, updateCartItem, clearCart } = useCart();
@@ -60,15 +61,30 @@ const CartPage = () => {
   }
 
   const handleQuantityChange = async (itemId: string, quantity: number) => {
-    await updateCartItem(itemId, quantity);
+    try {
+      await updateCartItem(itemId, quantity);
+      toast.success("Cart updated successfully");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update cart");
+    }
   };
 
   const handleRemoveItem = async (itemId: string) => {
-    await removeCartItem(itemId);
+    try {
+      await removeCartItem(itemId);
+      toast.success("Item removed from cart");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to remove item");
+    }
   };
 
   const handleClearCart = async () => {
-    await clearCart();
+    try {
+      await clearCart();
+      toast.success("Cart cleared");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to clear cart");
+    }
   };
 
   const subtotal = cart?.totalPrice || 0;
@@ -98,11 +114,11 @@ const CartPage = () => {
                   {cart?.items.map((item) => (
                     <div key={item._id} className="py-4 flex flex-col sm:flex-row gap-4">
                       <div className="flex-shrink-0">
-                        <Link to={`/products/${item.product}`}>
+                        <Link to={`/products/${item.product._id}`}>
                           <div className="h-24 w-24 rounded overflow-hidden">
                             <img 
-                              src={item.image || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80"} 
-                              alt={item.name || "Product"} 
+                              src={(item.product.images && item.product.images[0]) || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80"} 
+                              alt={item.product.name} 
                               className="h-full w-full object-cover"
                             />
                           </div>
@@ -110,10 +126,16 @@ const CartPage = () => {
                       </div>
                       
                       <div className="flex-1">
-                        <Link to={`/products/${item.product}`} className="font-semibold text-lg hover:text-blue-600">
-                          {item.name || "Product"}
+                        <Link to={`/products/${item.product._id}`} className="font-semibold text-lg hover:text-blue-600">
+                          {item.product.name}
                         </Link>
                         <div className="text-gray-600 mt-1">Price: ${item.price.toFixed(2)}</div>
+                        <div className="text-gray-600 mt-1">
+                          {item.product.stock > 0 
+                            ? <span className="text-green-600">In Stock ({item.product.stock} available)</span>
+                            : <span className="text-red-600">Out of Stock</span>
+                          }
+                        </div>
                         
                         <div className="mt-3 flex items-center justify-between">
                           <div className="flex items-center">
@@ -122,6 +144,7 @@ const CartPage = () => {
                               size="icon"
                               className="h-8 w-8"
                               onClick={() => handleQuantityChange(item._id, Math.max(1, item.quantity - 1))}
+                              disabled={item.quantity <= 1}
                             >
                               <Minus className="h-3 w-3" />
                             </Button>
@@ -131,6 +154,7 @@ const CartPage = () => {
                               size="icon"
                               className="h-8 w-8"
                               onClick={() => handleQuantityChange(item._id, item.quantity + 1)}
+                              disabled={item.quantity >= item.product.stock}
                             >
                               <Plus className="h-3 w-3" />
                             </Button>
