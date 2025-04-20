@@ -40,8 +40,14 @@ export const getAllProducts = async (params?: any) => {
 };
 
 export const getProduct = async (id: string) => {
-  const response = await api.get<ProductResponse>(`/products/${id}`);
-  return response.data;
+  try {
+    const response = await api.get<ProductResponse>(`/products/${id}`);
+    console.log('Product fetched successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching product:', error);
+    throw error;
+  }
 };
 
 export const getTopProducts = async (limit: number = 5) => {

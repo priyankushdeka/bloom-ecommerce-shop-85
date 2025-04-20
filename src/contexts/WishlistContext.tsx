@@ -92,7 +92,11 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const isInWishlist = (productId: string) => {
     if (!wishlist || !wishlist.products) return false;
-    return wishlist.products.includes(productId);
+    
+    // Fix the type mismatch issue by checking if products is an array of objects with _id
+    return wishlist.products.some(product => 
+      typeof product === 'object' && product._id === productId
+    );
   };
 
   return (

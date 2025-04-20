@@ -1,8 +1,8 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Heart, ChevronLeft, Minus, Plus, ShoppingCart } from "lucide-react";
+import { Heart, ChevronLeft, Minus, Plus, ShoppingCart, Indian } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import { getProduct } from "@/services/product.service";
@@ -11,6 +11,14 @@ import { useWishlist } from "@/contexts/WishlistContext";
 import { useAuth } from "@/contexts/AuthContext";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { toast } from "sonner";
+
+// INR conversion rate (assuming 1 USD = 75 INR)
+const INR_CONVERSION_RATE = 75;
+
+// Function to convert USD to INR
+const convertToINR = (usdPrice: number) => {
+  return usdPrice * INR_CONVERSION_RATE;
+};
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,11 +30,21 @@ const ProductDetail = () => {
   const { addToWishlist, removeFromWishlist, isInWishlist, loading: wishlistLoading } = useWishlist();
   const { isAuthenticated } = useAuth();
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['product', id],
     queryFn: () => id ? getProduct(id) : Promise.reject('No product ID'),
-    enabled: !!id
+    enabled: !!id,
+    retry: 3,
+    retryDelay: 1000,
+    staleTime: 60000
   });
+
+  // Refetch on component mount to ensure we have the latest data
+  useEffect(() => {
+    if (id) {
+      refetch();
+    }
+  }, [id, refetch]);
 
   const product = data?.data.product;
   const inWishlist = isAuthenticated && id && isInWishlist(id);
@@ -117,6 +135,9 @@ const ProductDetail = () => {
     );
   }
 
+  // Convert the product price to INR
+  const inrPrice = convertToINR(product.price);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -132,11 +153,15 @@ const ProductDetail = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
             {/* Product Images */}
             <div>
-              <div className="aspect-square rounded-lg overflow-hidden mb-4">
+              <div className="aspect-square rounded-lg overflow-hidden mb-4 bg-gray-100">
                 <img
-                  src={product.images && product.images.length > 0 ? product.images[selectedImage] : "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80"}
+                  src={product.images && product.images.length > 0 ? product.images[selectedImage] : "/placeholder.svg"}
                   alt={product.name}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Fallback if image fails to load
+                    (e.target as HTMLImageElement).src = "/placeholder.svg";
+                  }}
                 />
               </div>
               
@@ -145,7 +170,7 @@ const ProductDetail = () => {
                   {product.images.map((image: string, index: number) => (
                     <div
                       key={index}
-                      className={`aspect-square rounded-md overflow-hidden cursor-pointer ${
+                      className={`aspect-square rounded-md overflow-hidden cursor-pointer bg-gray-100 ${
                         selectedImage === index ? "ring-2 ring-blue-600" : ""
                       }`}
                       onClick={() => setSelectedImage(index)}
@@ -154,6 +179,9 @@ const ProductDetail = () => {
                         src={image}
                         alt={`${product.name} - ${index + 1}`}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/placeholder.svg";
+                        }}
                       />
                     </div>
                   ))}
@@ -173,7 +201,10 @@ const ProductDetail = () => {
                 <span className="text-gray-500">({product.numReviews || 0} reviews)</span>
               </div>
               
-              <div className="text-2xl font-bold text-blue-600 mb-4">${product.price.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-blue-600 mb-4 flex items-center">
+                <span className="text-lg mr-1">₹</span>
+                {inrPrice.toFixed(2)}
+              </div>
               
               <div className="border-t border-b py-4 my-4">
                 <p className="text-gray-700 leading-relaxed">{product.description}</p>
@@ -215,7 +246,7 @@ const ProductDetail = () => {
               
               <div className="flex flex-col sm:flex-row gap-4 mt-auto">
                 <Button
-                  className="flex-1"
+                  className="flex-1 bg-green-600 hover:bg-green-700"
                   size="lg"
                   onClick={handleAddToCart}
                   disabled={cartLoading || product.stock < 1}
@@ -238,7 +269,7 @@ const ProductDetail = () => {
               <div className="mt-8 text-sm text-gray-500">
                 <div className="flex items-center mb-2">
                   <span className="font-medium text-gray-700 mr-2">Category:</span>
-                  <span>{product.category}</span>
+                  <span className="capitalize">{product.category}</span>
                 </div>
               </div>
             </div>

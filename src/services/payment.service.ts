@@ -11,8 +11,20 @@ export interface PaymentOrderResponse {
   }
 }
 
+// INR conversion rate
+const INR_CONVERSION_RATE = 75;
+
 export const createPaymentOrder = async (orderId: string, amount: number) => {
-  const response = await api.post<PaymentOrderResponse>('/payments/create', { orderId, amount });
+  // Convert amount to Indian Rupees for Razorpay (which requires INR)
+  // We assume the amount is in USD from the backend
+  const inrAmount = amount * INR_CONVERSION_RATE;
+  
+  const response = await api.post<PaymentOrderResponse>('/payments/create', { 
+    orderId, 
+    amount: inrAmount,
+    currency: "INR" 
+  });
+  
   return response.data;
 };
 
